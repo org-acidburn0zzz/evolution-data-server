@@ -66,11 +66,11 @@ struct _ESExpResult {
 	time_t occuring_end;
 };
 
-typedef struct _ESExpResult *(ESExpFunc)(struct _ESExp *sexp, gint argc,
+typedef struct _ESExpResult *(*ESExpFunc)(struct _ESExp *sexp, gint argc,
 					 struct _ESExpResult **argv,
 					 gpointer data);
 
-typedef struct _ESExpResult *(ESExpIFunc)(struct _ESExp *sexp, gint argc,
+typedef struct _ESExpResult *(*ESExpIFunc)(struct _ESExp *sexp, gint argc,
 					  struct _ESExpTerm **argv,
 					  gpointer data);
 
@@ -89,8 +89,8 @@ struct _ESExpSymbol {
 	gchar *name;
 	gpointer data;
 	union {
-		ESExpFunc *func;
-		ESExpIFunc *ifunc;
+		ESExpFunc func;
+		ESExpIFunc ifunc;
 	} f;
 };
 
@@ -125,12 +125,12 @@ ESExp	       *e_sexp_new		(void);
 void		e_sexp_add_function	(ESExp *sexp,
 					 gint scope,
 					 const gchar *name,
-					 ESExpFunc *func,
+					 ESExpFunc func,
 					 gpointer data);
 void		e_sexp_add_ifunction	(ESExp *sexp,
 					 gint scope,
 					 const gchar *name,
-					 ESExpIFunc *func,
+					 ESExpIFunc func,
 					 gpointer data);
 void		e_sexp_add_variable	(ESExp *sexp,
 					 gint scope,

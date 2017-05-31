@@ -3263,12 +3263,12 @@ func_check_regex_raw (struct _ESExp *f,
 /* 'builtin' functions */
 static const struct {
 	const gchar *name;
-	ESExpFunc *func;
+	ESExpFunc func;
 	gint type;		/* set to 1 if a function can perform shortcut evaluation, or
 				   doesn't execute everything, 0 otherwise */
 } check_symbols[] = {
-	{ "and", (ESExpFunc *) func_check_subset, 1},
-	{ "or", (ESExpFunc *) func_check_subset, 1},
+	{ "and", (ESExpFunc) func_check_subset, 1},
+	{ "or", (ESExpFunc) func_check_subset, 1},
 
 	{ "contains", func_check, 0 },
 	{ "is", func_check, 0 },
@@ -3304,7 +3304,7 @@ e_book_backend_sqlitedb_check_summary_query_locked (EBookBackendSqliteDB *ebsdb,
 		if (check_symbols[i].type == 1) {
 			e_sexp_add_ifunction (
 				sexp, 0, check_symbols[i].name,
-				(ESExpIFunc *) check_symbols[i].func, ebsdb);
+				(ESExpIFunc) check_symbols[i].func, ebsdb);
 		} else {
 			e_sexp_add_function (
 				sexp, 0, check_symbols[i].name,
@@ -3970,11 +3970,11 @@ func_regex (struct _ESExp *f,
 /* 'builtin' functions */
 static struct {
 	const gchar *name;
-	ESExpFunc *func;
+	ESExpFunc func;
 	guint immediate :1;
 } symbols[] = {
-	{ "and", (ESExpFunc *) func_and, 1},
-	{ "or", (ESExpFunc *) func_or, 1},
+	{ "and", (ESExpFunc) func_and, 1},
+	{ "or", (ESExpFunc) func_or, 1},
 
 	{ "contains", func_contains, 0 },
 	{ "is", func_is, 0 },
@@ -4003,7 +4003,7 @@ sexp_to_sql_query (EBookBackendSqliteDB *ebsdb,
 		if (symbols[i].immediate)
 			e_sexp_add_ifunction (
 				sexp, 0, symbols[i].name,
-				(ESExpIFunc *) symbols[i].func, &data);
+				(ESExpIFunc) symbols[i].func, &data);
 		else
 			e_sexp_add_function (
 				sexp, 0, symbols[i].name,

@@ -1148,7 +1148,7 @@ e_cal_backend_sexp_init (ECalBackendSExp *sexp)
 /* 'builtin' functions */
 static struct {
 	const gchar *name;
-	ESExpFunc *func;
+	ESExpFunc func;
 	gint type;	/* set to 1 if a function can perform shortcut
 			 * evaluation, or doesn't execute everything,
 			 * 0 otherwise */
@@ -1201,7 +1201,7 @@ e_cal_backend_sexp_new (const gchar *text)
 			e_sexp_add_ifunction (
 				sexp->priv->search_sexp, 0,
 				symbols[ii].name,
-				(ESExpIFunc *) symbols[ii].func,
+				(ESExpIFunc) symbols[ii].func,
 				sexp->priv->search_context);
 		} else {
 			e_sexp_add_function (

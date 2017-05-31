@@ -970,7 +970,7 @@ func_check (struct _ESExp *f,
 /* 'builtin' functions */
 static const struct {
 	const gchar *name;
-	ESExpFunc *func;
+	ESExpFunc func;
 	gint type;		/* set to 1 if a function can perform shortcut evaluation, or
 				   doesn't execute everything, 0 otherwise */
 } check_symbols[] = {
@@ -1011,7 +1011,7 @@ e_book_backend_summary_is_summary_query (EBookBackendSummary *summary,
 	for (i = 0; i < G_N_ELEMENTS (check_symbols); i++) {
 		if (check_symbols[i].type == 1) {
 			e_sexp_add_ifunction (sexp, 0, check_symbols[i].name,
-					     (ESExpIFunc *) check_symbols[i].func, &retval);
+					     (ESExpIFunc) check_symbols[i].func, &retval);
 		} else {
 			e_sexp_add_function (
 				sexp, 0, check_symbols[i].name,
@@ -1221,7 +1221,7 @@ func_beginswith (struct _ESExp *f,
 /* 'builtin' functions */
 static const struct {
 	const gchar *name;
-	ESExpFunc *func;
+	ESExpFunc func;
 	gint type;		/* set to 1 if a function can perform shortcut evaluation, or
 				   doesn't execute everything, 0 otherwise */
 } symbols[] = {
@@ -1259,7 +1259,7 @@ e_book_backend_summary_search (EBookBackendSummary *summary,
 	for (i = 0; i < G_N_ELEMENTS (symbols); i++) {
 		if (symbols[i].type == 1) {
 			e_sexp_add_ifunction (sexp, 0, symbols[i].name,
-					     (ESExpIFunc *) symbols[i].func, summary);
+					     (ESExpIFunc) symbols[i].func, summary);
 		} else {
 			e_sexp_add_function (
 				sexp, 0, symbols[i].name,

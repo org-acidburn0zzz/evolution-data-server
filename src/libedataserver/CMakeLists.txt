@@ -291,7 +291,6 @@ set(gir_deps
 	${CMAKE_BINARY_DIR}/src/camel/Camel-${API_VERSION}.gir
 )
 
-gir_filter_out_sources(gir_sources e-sexp.h)
 gir_filter_out_sources(gir_sources -private.h)
 
 gir_add_introspection_simple(

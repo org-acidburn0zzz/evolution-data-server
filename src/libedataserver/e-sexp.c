@@ -1463,22 +1463,22 @@ e_sexp_class_init (ESExpClass *class)
 /* 'builtin' functions */
 static const struct {
 	const gchar *name;
-	ESExpFunc *func;
+	ESExpFunc func;
 	gint type;		/* set to 1 if a function can perform shortcut evaluation, or
 				   doesn't execute everything, 0 otherwise */
 } symbols[] = {
-	{ "and", (ESExpFunc *) term_eval_and, 1 },
-	{ "or", (ESExpFunc *) term_eval_or, 1 },
-	{ "not", (ESExpFunc *) term_eval_not, 0 },
-	{ "<", (ESExpFunc *) term_eval_lt, 1 },
-	{ ">", (ESExpFunc *) term_eval_gt, 1 },
-	{ "=", (ESExpFunc *) term_eval_eq, 1 },
-	{ "+", (ESExpFunc *) term_eval_plus, 0 },
-	{ "-", (ESExpFunc *) term_eval_sub, 0 },
-	{ "cast-int", (ESExpFunc *) term_eval_castint, 0 },
-	{ "cast-string", (ESExpFunc *) term_eval_caststring, 0 },
-	{ "if", (ESExpFunc *) term_eval_if, 1 },
-	{ "begin", (ESExpFunc *) term_eval_begin, 1 },
+	{ "and", (ESExpFunc) term_eval_and, 1 },
+	{ "or", (ESExpFunc) term_eval_or, 1 },
+	{ "not", (ESExpFunc) term_eval_not, 0 },
+	{ "<", (ESExpFunc) term_eval_lt, 1 },
+	{ ">", (ESExpFunc) term_eval_gt, 1 },
+	{ "=", (ESExpFunc) term_eval_eq, 1 },
+	{ "+", (ESExpFunc) term_eval_plus, 0 },
+	{ "-", (ESExpFunc) term_eval_sub, 0 },
+	{ "cast-int", (ESExpFunc) term_eval_castint, 0 },
+	{ "cast-string", (ESExpFunc) term_eval_caststring, 0 },
+	{ "if", (ESExpFunc) term_eval_if, 1 },
+	{ "begin", (ESExpFunc) term_eval_begin, 1 },
 };
 
 static void
@@ -1530,7 +1530,7 @@ e_sexp_init (ESExp *sexp)
 			e_sexp_add_ifunction (
 				sexp, 0,
 				symbols[i].name,
-				(ESExpIFunc *) symbols[i].func,
+				(ESExpIFunc) symbols[i].func,
 				(gpointer) &symbols[i]);
 		} else {
 			e_sexp_add_function (
@@ -1552,7 +1552,7 @@ void
 e_sexp_add_function (ESExp *sexp,
                      gint scope,
                      const gchar *name,
-                     ESExpFunc *func,
+                     ESExpFunc func,
                      gpointer data)
 {
 	ESExpSymbol *s;
@@ -1574,7 +1574,7 @@ void
 e_sexp_add_ifunction (ESExp *sexp,
                       gint scope,
                       const gchar *name,
-                      ESExpIFunc *ifunc,
+                      ESExpIFunc ifunc,
                       gpointer data)
 {
 	ESExpSymbol *s;

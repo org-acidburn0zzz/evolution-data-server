@@ -3796,7 +3796,7 @@ func_exists (struct _ESExp *f,
 /* 'builtin' functions */
 static struct {
 	const gchar *name;
-	ESExpFunc *func;
+	ESExpFunc func;
 	gint type;		/* set to 1 if a function can perform shortcut evaluation, or
 				   doesn't execute everything, 0 otherwise */
 } symbols[] = {
@@ -3829,7 +3829,7 @@ e_book_backend_ldap_build_query (EBookBackendLDAP *bl,
 	for (i = 0; i < G_N_ELEMENTS (symbols); i++) {
 		if (symbols[i].type == 1) {
 			e_sexp_add_ifunction (sexp, 0, symbols[i].name,
-					     (ESExpIFunc *) symbols[i].func, &data);
+					     (ESExpIFunc) symbols[i].func, &data);
 		} else {
 			e_sexp_add_function (
 				sexp, 0, symbols[i].name,

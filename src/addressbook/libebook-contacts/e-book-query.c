@@ -723,7 +723,7 @@ func_exists_vcard (struct _ESExp *f,
 /* 'builtin' functions */
 static const struct {
 	const gchar *name;
-	ESExpFunc *func;
+	ESExpFunc func;
 	gint type;		/* set to 1 if a function can perform shortcut evaluation, or
 				   doesn't execute everything, 0 otherwise */
 } symbols[] = {
@@ -765,7 +765,7 @@ e_book_query_from_string (const gchar *query_string)
 	for (i = 0; i < G_N_ELEMENTS (symbols); i++) {
 		if (symbols[i].type == 1) {
 			e_sexp_add_ifunction (sexp, 0, symbols[i].name,
-					     (ESExpIFunc *) symbols[i].func, &list);
+					     (ESExpIFunc) symbols[i].func, &list);
 		} else {
 			e_sexp_add_function (
 				sexp, 0, symbols[i].name,

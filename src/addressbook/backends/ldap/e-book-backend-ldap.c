@@ -4940,12 +4940,10 @@ book_backend_ldap_get_backend_property (EBookBackend *backend,
 		get_backend_property (backend, prop_name);
 }
 
-static void
-book_backend_ldap_open (EBookBackend *backend,
-                        EDataBook *book,
-                        guint opid,
-                        GCancellable *cancellable,
-                        gboolean only_if_exists)
+static gboolean
+book_backend_ldap_open_sync (EBookBackend *backend,
+                             GCancellable *cancellable,
+                             GError **error)
 {
 	EBookBackendLDAP *bl = E_BOOK_BACKEND_LDAP (backend);
 	ESourceAuthentication *auth_extension;
@@ -4956,9 +4954,9 @@ book_backend_ldap_open (EBookBackend *backend,
 	const gchar *cache_dir;
 	gchar *filename;
 	gboolean auth_required;
-	GError *error = NULL;
+	gboolean has_error;
 
-	g_return_if_fail (!bl->priv->connected);
+	g_return_val_if_fail (!bl->priv->connected, TRUE);
 
 	if (enable_debug)
 		printf ("%s ... \n", G_STRFUNC);
@@ -5022,11 +5020,15 @@ book_backend_ldap_open (EBookBackend *backend,
 		/* Offline */
 		e_book_backend_set_writable (backend, FALSE);
 
-		if (!bl->priv->marked_for_offline)
-			error = EDB_ERROR (OFFLINE_UNAVAILABLE);
+		if (!bl->priv->marked_for_offline) {
+			g_set_error (error,
+				E_DATA_BOOK_ERROR,
+				E_DATA_BOOK_STATUS_OFFLINE_UNAVAILABLE,
+				_("DataBook is Offline"));
+			return FALSE;
+		}
 
-		e_data_book_respond_open (book, opid, error);
-		return;
+		return TRUE;
 	}
 
 	e_book_backend_set_writable (backend, TRUE);
@@ -5036,34 +5038,37 @@ book_backend_ldap_open (EBookBackend *backend,
 	auth_required = e_source_authentication_required (auth_extension);
 
 	if (!auth_required)
-		e_book_backend_ldap_connect (bl, &error);
+		e_book_backend_ldap_connect (bl, error);
 
-	if (g_error_matches (
-		error, E_DATA_BOOK_ERROR,
+	if (error != NULL && g_error_matches (
+		*error, E_DATA_BOOK_ERROR,
 		E_DATA_BOOK_STATUS_AUTHENTICATION_REQUIRED)) {
 
-		g_clear_error (&error);
+		g_clear_error (error);
 		auth_required = TRUE;
 	}
 
-	if (auth_required && error == NULL) {
+	has_error = (error != NULL && *error != NULL);
+	if (auth_required && !has_error) {
 		e_source_set_connection_status (source, E_SOURCE_CONNECTION_STATUS_DISCONNECTED);
 
 		e_backend_credentials_required_sync (E_BACKEND (backend), E_SOURCE_CREDENTIALS_REASON_REQUIRED,
-			NULL, 0, NULL, cancellable, &error);
-	} else if (!auth_required && !error) {
+			NULL, 0, NULL, cancellable, error);
+	} else if (!auth_required && !has_error) {
 		e_source_set_connection_status (source, E_SOURCE_CONNECTION_STATUS_CONNECTED);
 	} else {
 		e_source_set_connection_status (source, E_SOURCE_CONNECTION_STATUS_DISCONNECTED);
 	}
 
-	if (error != NULL && enable_debug)
+	has_error = (error != NULL && *error != NULL);
+	if (has_error && enable_debug) {
 		printf ("%s ... failed to connect to server \n", G_STRFUNC);
+	}
 
-	if (error == NULL && bl->priv->marked_for_offline)
+	if (!has_error && bl->priv->marked_for_offline)
 		generate_cache (bl);
 
-	e_data_book_respond_open (book, opid, error);
+	return !has_error;
 }
 
 static void
@@ -5454,12 +5459,12 @@ book_backend_ldap_get_contact (EBookBackend *backend,
 	}
 }
 
-static void
-book_backend_ldap_get_contact_list (EBookBackend *backend,
-                                    EDataBook *book,
-                                    guint32 opid,
-                                    GCancellable *cancellable,
-                                    const gchar *query)
+static gboolean
+book_backend_ldap_get_contact_list_sync (EBookBackend *backend,
+                                         const gchar *query,
+                                         GQueue *out_contacts,
+                                         GCancellable *cancellable,
+                                         GError **error)
 {
 	LDAPGetContactListOp *contact_list_op;
 	EBookBackendLDAP *bl = E_BOOK_BACKEND_LDAP (backend);
@@ -5471,7 +5476,7 @@ book_backend_ldap_get_contact_list (EBookBackend *backend,
 	gulong diff;
 
 	if (enable_debug) {
-		printf ("e_book_backend_ldap_get_contact_list ... \n");
+		printf ("%s ... \n", G_STRFUNC);
 		g_get_current_time (&start);
 	}
 
@@ -5507,7 +5512,7 @@ book_backend_ldap_get_contact_list (EBookBackend *backend,
 		g_rec_mutex_unlock (&eds_ldap_handler_lock);
 		e_data_book_respond_get_contact_list (book, opid, EDB_ERROR_NOT_CONNECTED (), NULL);
 		if (enable_debug)
-			printf ("e_book_backend_ldap_get_contact_list... ldap handler is NULL\n");
+			printf ("%s... ldap handler is NULL\n", G_STRFUNC);
 		return;
 	}
 	g_rec_mutex_unlock (&eds_ldap_handler_lock);
@@ -5550,7 +5555,7 @@ book_backend_ldap_get_contact_list (EBookBackend *backend,
 			diff = end.tv_sec * 1000 + end.tv_usec / 1000;
 			diff -= start.tv_sec * 1000 + start.tv_usec / 1000;
 
-			printf ("e_book_backend_ldap_get_contact_list invoked contact_list_handler ");
+			printf ("%s invoked contact_list_handler ", G_STRFUNC);
 			printf ("and took %ld.%03ld seconds\n", diff / 1000, diff % 1000);
 		}
 	} else {
@@ -5939,12 +5944,12 @@ e_book_backend_ldap_class_init (EBookBackendLDAPClass *class)
 
 	book_backend_class = E_BOOK_BACKEND_CLASS (class);
 	book_backend_class->get_backend_property = book_backend_ldap_get_backend_property;
-	book_backend_class->open = book_backend_ldap_open;
+	book_backend_class->open_sync = book_backend_ldap_open_sync;
 	book_backend_class->create_contacts = book_backend_ldap_create_contacts;
 	book_backend_class->modify_contacts = book_backend_ldap_modify_contacts;
 	book_backend_class->remove_contacts = book_backend_ldap_remove_contacts;
 	book_backend_class->get_contact = book_backend_ldap_get_contact;
-	book_backend_class->get_contact_list = book_backend_ldap_get_contact_list;
+	book_backend_class->get_contact_list_sync = book_backend_ldap_get_contact_list_sync;
 	book_backend_class->get_contact_list_uids = book_backend_ldap_get_contact_list_uids;
 	book_backend_class->start_view = book_backend_ldap_start_view;
 	book_backend_class->stop_view = book_backend_ldap_stop_view;
